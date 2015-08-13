@@ -1,8 +1,19 @@
 #include "network.h"
 #include "utils.h"
 #include "parser.h"
+/*
+void write_outputs_to_file(float *outputVals, int outputSize, char *outputFileName){
+    FILE *fout = fopen(outputFileName, "w");
+    if(!fout) file_error(outputFileName);
+    int predIdx = 0;
+    for(predIdx=0;predIdx<outputSize;predIdx++){
+        fwrite(outputVals[predIdx], sizeof(float), 1, fout);
+    }
+    fclose(fout);
+}
+*/
 
-void train_writing(char *cfgfile, char *weightfile)
+void train_tables(char *cfgfile, char *weightfile, char *dataFolder, char *labelsFolder)
 {
     data_seed = time(0);
     srand(time(0));
@@ -16,14 +27,17 @@ void train_writing(char *cfgfile, char *weightfile)
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
     int imgs = 256;
     int i = net.seen/imgs;
-    list *plist = get_paths("data/train.list");
+    char trainListBuff[256];
+    sprintf(trainListBuff, "%s/train.list", dataFolder);
+    printf("Training list file: %s", trainListBuff);
+    list *plist = get_paths(trainListBuff);
     char **paths = (char **)list_to_array(plist);
     printf("%d\n", plist->size);
     clock_t time;
     while(1){
         ++i;
         time=clock();
-        data train = load_data_writing(paths, imgs, plist->size, 256, 256, 4);
+        data train = load_data_tables(paths, imgs, plist->size, 256, 256, dataFolder, labelsFolder);
         float loss = train_network(net, train);
         #ifdef GPU
         float *out = get_network_output_gpu(net);
@@ -42,13 +56,13 @@ void train_writing(char *cfgfile, char *weightfile)
         //if(i%100 == 0 && net.learning_rate > .00001) net.learning_rate *= .97;
         if(i%250==0){
             char buff[256];
-            sprintf(buff, "/home/pjreddie/writing_backup/%s_%d.weights", base, i);
+            sprintf(buff, "weights/%s_%d.weights", base, i);
             save_weights(net, buff);
         }
     }
 }
 
-void test_writing(char *cfgfile, char *weightfile, char *outfile)
+void test_tables(char *cfgfile, char *weightfile)
 {
     network net = parse_network_cfg(cfgfile);
     if(weightfile){
@@ -69,32 +83,36 @@ void test_writing(char *cfgfile, char *weightfile, char *outfile)
     time=clock();
     float *predictions = network_predict(net, X);
     printf("%s: Predicted in %f seconds.\n", filename, sec(clock()-time));
-    image pred = get_network_image(net);
 
-    if (outfile) {
-        printf("Save image as %s.png (shape: %d %d)\n", outfile, pred.w, pred.h);
-        save_image(pred, outfile);
-    } else {
-        show_image(pred, "prediction");
-        #ifdef OPENCV
-        cvWaitKey(0);
-        #endif
-    }
+    // Write predicitons to output file
+    int netOutputSize = get_network_output_size(net);
+    char *outFileName = find_replace(filename, ".png", "-output.csv");
+    printf("Writing predictions to the output file %s", outFileName);
+    write_outputs_to_file(predictions, netOutputSize, outFileName);
+
+    // Write last but 1 layer to output file
+    float *lastButOneOutputs = get_network_output_lastButOne(net);
+    int lboNetOutputSize = get_network_output_size_lastButOne(net);
+    char *lboFileName = find_replace(filename, ".png", "-lastButOne.csv");
+    printf("Writing the last but one layer outputs to the output file %s", lboFileName);
+    write_outputs_to_file(lastButOneOutputs, lboNetOutputSize, lboFileName);
 
 	free_image(im);
 	free_image(sized);
 }
 
-void run_writing(int argc, char **argv)
+void run_tables(int argc, char **argv)
 {
-    if(argc < 4){
-        fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
+    if(argc < 6){
+        fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [dataFolderName] [labelsFolderName] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }
 
     char *cfg = argv[3];
-    char *weights = (argc > 4) ? argv[4] : 0;
-    char *outfile = (argc > 5) ? argv[5] : 0;
-    if(0==strcmp(argv[2], "train")) train_writing(cfg, weights);
-    if(0==strcmp(argv[2], "test")) test_writing(cfg, weights, outfile);
+    char *dataFolder = argv[4];
+    char *labelsFolder = argv[5];
+    char *weights = (argc > 6) ? argv[6] : 0;
+
+    if(0==strcmp(argv[2], "train")) train_tables(cfg, weights, dataFolder, labelsFolder);
+    if(0==strcmp(argv[2], "test")) test_tables(cfg, weights);
 }

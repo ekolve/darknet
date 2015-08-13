@@ -12,6 +12,7 @@
 extern void run_imagenet(int argc, char **argv);
 extern void run_detection(int argc, char **argv);
 extern void run_writing(int argc, char **argv);
+extern void run_tables(int argc, char **argv);
 extern void run_captcha(int argc, char **argv);
 extern void run_nightmare(int argc, char **argv);
 
@@ -97,6 +98,8 @@ int main(int argc, char **argv)
         run_detection(argc, argv);
     } else if (0 == strcmp(argv[1], "writing")){
         run_writing(argc, argv);
+    } else if (0 == strcmp(argv[1], "tables")){
+        run_tables(argc, argv);
     } else if (0 == strcmp(argv[1], "test")){
         test_resize(argv[2]);
     } else if (0 == strcmp(argv[1], "captcha")){
@@ -118,4 +121,3 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-

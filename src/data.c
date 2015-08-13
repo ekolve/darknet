@@ -63,6 +63,42 @@ char **find_replace_paths(char **paths, int n, char *find, char *replace)
     return replace_paths;
 }
 
+void fill_label_for_single_image(char *path, float *label)
+{
+    FILE *file = fopen(path, "r");
+    if(!file) file_error(path);
+    char *inValueStr;
+    int i=0;
+    while((inValueStr=fgetl(file))){
+        label[i] = atof(inValueStr);
+        i++;
+    }
+    fclose(file);
+}
+
+int get_num_labels(char path)
+{
+    FILE *file = fopen(path, "r");
+    if(!file) file_error(path);
+    int lineCounter=0;
+    char *inValueStr;
+    while((inValueStr=fgetl(file))){
+        lineCounter++;
+    }
+    fclose(file);
+    return lineCounter;
+}
+
+matrix load_csv_paths(char **paths, int n)
+{
+    int numLabels = get_num_labels(paths[0]);
+    matrix y = make_matrix(n, numLabels);
+    int i;
+    for(i = 0; i < n; ++i){
+        fill_label_for_single_image(paths[i], y.vals[i]);
+    }
+}
+
 matrix load_image_paths_gray(char **paths, int n, int w, int h)
 {
     int i;
@@ -551,6 +587,43 @@ pthread_t load_data_detection_thread(int n, char **paths, int m, int classes, in
     return thread;
 }
 
+void write_outputs_to_file(float *outputVals, int outputSize, char *outputFileName){
+    FILE *fout = fopen(outputFileName, "w");
+    if(!fout) file_error(outputFileName);
+    int predIdx = 0;
+    for(predIdx=0;predIdx<outputSize;predIdx++){
+        fwrite(&outputVals[predIdx], sizeof(float), 1, fout);
+    }
+    fclose(fout);
+}
+
+data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder, char *labelsFolder)
+{
+    // n : Number of images per batch
+    // m : Number of total training set
+    // w,h : Width and height of images
+    // k : Number of labels to regress to
+
+    if(m) paths = get_random_paths(paths, n, m);
+    char **replace_paths_ext = find_replace_paths(paths, n, ".png", "-label.csv");
+    char replacePathBuff1[256];
+    sprintf(replacePathBuff1, "/%s/", dataFolder);
+    char replacePathBuff2[256];
+    sprintf(replacePathBuff2, "/%s/", labelsFolder);
+    char **replace_paths = find_replace_paths(replace_paths_ext, n, replacePathBuff1, replacePathBuff2);
+    data d;
+    d.shallow = 0;
+    d.X = load_image_paths(paths, n, w, h);
+    d.y = load_csv_paths(paths, n);
+    if(m) free(paths);
+    int i;
+    for(i = 0; i < n; ++i) free(replace_paths[i]);
+    free(replace_paths);
+    for(i = 0; i < n; ++i) free(replace_paths_ext[i]);
+    free(replace_paths_ext);
+    return d;
+}
+
 data load_data_writing(char **paths, int n, int m, int w, int h, int downsample)
 {
     if(m) paths = get_random_paths(paths, n, m);
@@ -802,4 +875,3 @@ data *split_data(data d, int part, int total)
     split[1] = test;
     return split;
 }
-

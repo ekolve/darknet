@@ -43,7 +43,12 @@ pthread_t load_data_localization_thread(int n, char **paths, int m, int classes,
 data load_cifar10_data(char *filename);
 data load_all_cifar10();
 
+data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder, char *labelsFolder);
 data load_data_writing(char **paths, int n, int m, int w, int h, int downsample);
+matrix load_csv_paths(char **paths, int n);
+void fill_label_for_single_image(char *path, float *label);
+int get_num_labels(char path);
+void write_outputs_to_file(float *outputVals, int outputSize, char *outputFileName);
 
 list *get_paths(char *filename);
 char **get_labels(char *filename);
