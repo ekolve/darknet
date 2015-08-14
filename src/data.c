@@ -615,9 +615,9 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     printf("2");
     fflush(stdout);
     char replacePathBuff1[256];
-    sprintf(replacePathBuff1, "/%s/", dataFolder);
+    sprintf(replacePathBuff1, "%s", dataFolder);
     char replacePathBuff2[256];
-    sprintf(replacePathBuff2, "/%s/", labelsFolder);
+    sprintf(replacePathBuff2, "%s", labelsFolder);
     char **replace_paths = find_replace_paths(replace_paths_ext, n, replacePathBuff1, replacePathBuff2);
     printf("3");
     fflush(stdout);
