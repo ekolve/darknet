@@ -104,6 +104,8 @@ int get_num_labels(char *path)
 matrix load_csv_paths(char **paths, int n)
 {
     int numLabels = get_num_labels(paths[0]);
+    printf("Really out");
+    fflush(stdout);
     //int numLabels = 18;
     printf("\n%s,%s",n,numLabels);
     fflush(stdout);
