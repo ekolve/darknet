@@ -87,7 +87,7 @@ int get_num_labels(char *path)
     FILE *file = fopen(path, "r");
     if(!file) file_error(path);
     int lineCounter=0;
-    char inValueStr[256];
+    char *inValueStr;
     while((inValueStr=fgetl(file))){
         printf(" %s ", inValueStr);
         fflush(stdout);
