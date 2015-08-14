@@ -626,6 +626,10 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     d.X = load_image_paths(paths, n, w, h);
     printf("4");
     fflush(stdout);
+    printf("%s",paths[0]);
+    fflush(stdout);
+    printf("%s",replace_paths[0]);
+    fflush(stdout);
     d.y = load_csv_paths(replace_paths, n);
     printf("5");
     fflush(stdout);
