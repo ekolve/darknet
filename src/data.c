@@ -65,6 +65,8 @@ char **find_replace_paths(char **paths, int n, char *find, char *replace)
 
 void fill_label_for_single_image(char *path, float *label)
 {
+    printf("%s",path);
+    fflush(stdout);
     FILE *file = fopen(path, "r");
     if(!file) file_error(path);
     char *inValueStr;
