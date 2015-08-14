@@ -47,7 +47,7 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
 data load_data_writing(char **paths, int n, int m, int w, int h, int downsample);
 matrix load_csv_paths(char **paths, int n);
 void fill_label_for_single_image(char *path, float *label);
-int get_num_labels(char path);
+int get_num_labels(char *path);
 void write_outputs_to_file(float *outputVals, int outputSize, char *outputFileName);
 
 list *get_paths(char *filename);
