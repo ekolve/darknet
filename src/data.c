@@ -97,8 +97,8 @@ int get_num_labels(char *path)
 
 matrix load_csv_paths(char **paths, int n)
 {
-    //int numLabels = get_num_labels(paths[0]);
-    int numLabels = 18;
+    int numLabels = get_num_labels(paths[0]);
+    //int numLabels = 18;
     printf("\n%s,%s",n,numLabels);
     matrix y = make_matrix(n, numLabels);
     int i;
