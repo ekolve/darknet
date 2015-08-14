@@ -73,7 +73,7 @@ void fill_label_for_single_image(char *path, float *label)
     int i=0;
     while((inValueStr=fgetl(file))){
         label[i] = atof(inValueStr);
-        printf(" %f", label[i]);
+        //printf(" %f", label[i]);
         fflush(stdout);
         i++;
     }
@@ -114,6 +114,8 @@ matrix load_csv_paths(char **paths, int n)
     for(i = 0; i < n; ++i){
         fill_label_for_single_image(paths[i], y.vals[i]);
     }
+    printf("Finished loading all csvs");
+    fflush(stdout);
 }
 
 matrix load_image_paths_gray(char **paths, int n, int w, int h)
@@ -644,7 +646,7 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     printf("\n%s",replace_paths[0]);
     fflush(stdout);
     d.y = load_csv_paths(replace_paths, n);
-    printf("5");
+    printf("Finished Y");
     fflush(stdout);
     if(m) free(paths);
     int i;
