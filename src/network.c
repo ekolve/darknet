@@ -4,6 +4,7 @@
 #include "image.h"
 #include "data.h"
 #include "utils.h"
+#include "blas.h"
 
 #include "crop_layer.h"
 #include "connected_layer.h"
@@ -12,6 +13,7 @@
 #include "detection_layer.h"
 #include "normalization_layer.h"
 #include "maxpool_layer.h"
+#include "avgpool_layer.h"
 #include "cost_layer.h"
 #include "softmax_layer.h"
 #include "dropout_layer.h"
@@ -28,6 +30,8 @@ char *get_layer_string(LAYER_TYPE a)
             return "connected";
         case MAXPOOL:
             return "maxpool";
+        case AVGPOOL:
+            return "avgpool";
         case SOFTMAX:
             return "softmax";
         case DETECTION:
@@ -65,6 +69,9 @@ void forward_network(network net, network_state state)
     int i;
     for(i = 0; i < net.n; ++i){
         layer l = net.layers[i];
+        if(l.delta){
+            scal_cpu(l.outputs * l.batch, 0, l.delta, 1);
+        }
         if(l.type == CONVOLUTIONAL){
             forward_convolutional_layer(l, state);
         } else if(l.type == DECONVOLUTIONAL){
@@ -83,6 +90,8 @@ void forward_network(network net, network_state state)
             forward_softmax_layer(l, state);
         } else if(l.type == MAXPOOL){
             forward_maxpool_layer(l, state);
+        } else if(l.type == AVGPOOL){
+            forward_avgpool_layer(l, state);
         } else if(l.type == DROPOUT){
             forward_dropout_layer(l, state);
         } else if(l.type == ROUTE){
@@ -124,13 +133,20 @@ float *get_network_output_lastButOne(network net)
 
 float get_network_cost(network net)
 {
-    if(net.layers[net.n-1].type == COST){
-        return net.layers[net.n-1].output[0];
+    int i;
+    float sum = 0;
+    int count = 0;
+    for(i = 0; i < net.n; ++i){
+        if(net.layers[net.n-1].type == COST){
+            sum += net.layers[net.n-1].output[0];
+            ++count;
+        }
+        if(net.layers[net.n-1].type == DETECTION){
+            sum += net.layers[net.n-1].cost[0];
+            ++count;
+        }
     }
-    if(net.layers[net.n-1].type == DETECTION){
-        return net.layers[net.n-1].cost[0];
-    }
-    return 0;
+    return sum/count;
 }
 
 int get_predicted_class_network(network net)
@@ -163,6 +179,8 @@ void backward_network(network net, network_state state)
             backward_normalization_layer(l, state);
         } else if(l.type == MAXPOOL){
             if(i != 0) backward_maxpool_layer(l, state);
+        } else if(l.type == AVGPOOL){
+            backward_avgpool_layer(l, state);
         } else if(l.type == DROPOUT){
             backward_dropout_layer(l, state);
         } else if(l.type == DETECTION){
@@ -181,9 +199,9 @@ void backward_network(network net, network_state state)
 
 float train_network_datum(network net, float *x, float *y)
 {
-    #ifdef GPU
+#ifdef GPU
     if(gpu_index >= 0) return train_network_datum_gpu(net, x, y);
-    #endif
+#endif
     network_state state;
     state.input = x;
     state.delta = 0;
@@ -280,6 +298,9 @@ int resize_network(network *net, int w, int h)
             resize_convolutional_layer(&l, w, h);
         }else if(l.type == MAXPOOL){
             resize_maxpool_layer(&l, w, h);
+        }else if(l.type == AVGPOOL){
+            resize_avgpool_layer(&l, w, h);
+            break;
         }else if(l.type == NORMALIZATION){
             resize_normalization_layer(&l, w, h);
         }else{

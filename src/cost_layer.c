@@ -50,7 +50,7 @@ void forward_cost_layer(cost_layer l, network_state state)
     if(l.cost_type == MASKED){
         int i;
         for(i = 0; i < l.batch*l.inputs; ++i){
-            if(state.truth[i] == 0) state.input[i] = 0;
+            if(state.truth[i] == SECRET_NUM) state.input[i] = SECRET_NUM;
         }
     }
     copy_cpu(l.batch*l.inputs, state.truth, 1, l.delta, 1);
@@ -61,7 +61,7 @@ void forward_cost_layer(cost_layer l, network_state state)
 
 void backward_cost_layer(const cost_layer l, network_state state)
 {
-    copy_cpu(l.batch*l.inputs, l.delta, 1, state.delta, 1);
+    axpy_cpu(l.batch*l.inputs, 1, l.delta, 1, state.delta, 1);
 }
 
 #ifdef GPU
@@ -80,7 +80,7 @@ void forward_cost_layer_gpu(cost_layer l, network_state state)
 {
     if (!state.truth) return;
     if (l.cost_type == MASKED) {
-        mask_ongpu(l.batch*l.inputs, state.input, state.truth);
+        mask_ongpu(l.batch*l.inputs, state.input, SECRET_NUM, state.truth);
     }
     
     copy_ongpu(l.batch*l.inputs, state.truth, 1, l.delta_gpu, 1);
@@ -92,7 +92,7 @@ void forward_cost_layer_gpu(cost_layer l, network_state state)
 
 void backward_cost_layer_gpu(const cost_layer l, network_state state)
 {
-    copy_ongpu(l.batch*l.inputs, l.delta_gpu, 1, state.delta, 1);
+    axpy_ongpu(l.batch*l.inputs, 1, l.delta_gpu, 1, state.delta, 1);
 }
 #endif
 

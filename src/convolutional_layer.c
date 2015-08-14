@@ -189,8 +189,6 @@ void backward_convolutional_layer(convolutional_layer l, network_state state)
     gradient_array(l.output, m*k*l.batch, l.activation, l.delta);
     backward_bias(l.bias_updates, l.delta, l.batch, l.n, k);
 
-    if(state.delta) memset(state.delta, 0, l.batch*l.h*l.w*l.c*sizeof(float));
-
     for(i = 0; i < l.batch; ++i){
         float *a = l.delta + i*m*k;
         float *b = l.col_image;
@@ -245,12 +243,26 @@ void rgbgr_filters(convolutional_layer l)
     }
 }
 
+void rescale_filters(convolutional_layer l, float scale, float trans)
+{
+    int i;
+    for(i = 0; i < l.n; ++i){
+        image im = get_convolutional_filter(l, i);
+        if (im.c == 3) {
+            scale_image(im, scale);
+            float sum = sum_array(im.data, im.w*im.h*im.c);
+            l.biases[i] += sum*trans;
+        }
+    }
+}
+
 image *get_filters(convolutional_layer l)
 {
     image *filters = calloc(l.n, sizeof(image));
     int i;
     for(i = 0; i < l.n; ++i){
         filters[i] = copy_image(get_convolutional_filter(l, i));
+        normalize_image(filters[i]);
     }
     return filters;
 }

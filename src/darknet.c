@@ -11,10 +11,12 @@
 
 extern void run_imagenet(int argc, char **argv);
 extern void run_detection(int argc, char **argv);
+extern void run_coco(int argc, char **argv);
 extern void run_writing(int argc, char **argv);
 extern void run_tables(int argc, char **argv);
 extern void run_captcha(int argc, char **argv);
 extern void run_nightmare(int argc, char **argv);
+extern void run_dice(int argc, char **argv);
 
 void change_rate(char *filename, float scale, float add)
 {
@@ -37,11 +39,28 @@ void partial(char *cfgfile, char *weightfile, char *outfile, int max)
         load_weights_upto(&net, weightfile, max);
     }
     net.seen = 0;
-    save_weights(net, outfile);
+    save_weights_upto(net, outfile, max);
 }
 
 #include "convolutional_layer.h"
-void rgbgr_filters(convolutional_layer l);
+void rescale_net(char *cfgfile, char *weightfile, char *outfile)
+{
+    gpu_index = -1;
+    network net = parse_network_cfg(cfgfile);
+    if(weightfile){
+        load_weights(&net, weightfile);
+    }
+    int i;
+    for(i = 0; i < net.n; ++i){
+        layer l = net.layers[i];
+        if(l.type == CONVOLUTIONAL){
+            rescale_filters(l, 2, -.5);
+            break;
+        }
+    }
+    save_weights(net, outfile);
+}
+
 void rgbgr_net(char *cfgfile, char *weightfile, char *outfile)
 {
     gpu_index = -1;
@@ -96,6 +115,10 @@ int main(int argc, char **argv)
         run_imagenet(argc, argv);
     } else if (0 == strcmp(argv[1], "detection")){
         run_detection(argc, argv);
+    } else if (0 == strcmp(argv[1], "coco")){
+        run_coco(argc, argv);
+    } else if (0 == strcmp(argv[1], "dice")){
+        run_dice(argc, argv);
     } else if (0 == strcmp(argv[1], "writing")){
         run_writing(argc, argv);
     } else if (0 == strcmp(argv[1], "tables")){
@@ -110,6 +133,8 @@ int main(int argc, char **argv)
         change_rate(argv[2], atof(argv[3]), (argc > 4) ? atof(argv[4]) : 0);
     } else if (0 == strcmp(argv[1], "rgbgr")){
         rgbgr_net(argv[2], argv[3], argv[4]);
+    } else if (0 == strcmp(argv[1], "rescale")){
+        rescale_net(argv[2], argv[3], argv[4]);
     } else if (0 == strcmp(argv[1], "partial")){
         partial(argv[2], argv[3], argv[4], atoi(argv[5]));
     } else if (0 == strcmp(argv[1], "visualize")){

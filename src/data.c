@@ -197,7 +197,7 @@ void randomize_boxes(box_label *b, int n)
 
 void fill_truth_detection(char *path, float *truth, int classes, int num_boxes, int flip, int background, float dx, float dy, float sx, float sy)
 {
-    char *labelpath = find_replace(path, "detection_images", "labels");
+    char *labelpath = find_replace(path, "JPEGImages", "labels");
     labelpath = find_replace(labelpath, ".jpg", ".txt");
     labelpath = find_replace(labelpath, ".JPEG", ".txt");
     int count = 0;
@@ -254,8 +254,6 @@ void fill_truth_detection(char *path, float *truth, int classes, int num_boxes, 
         h = constrain(0, 1, h);
         if (w < .01 || h < .01) continue;
         if(1){
-            //w = sqrt(w);
-            //h = sqrt(h);
             w = pow(w, 1./2.);
             h = pow(h, 1./2.);
         }
@@ -389,7 +387,7 @@ void fill_truth(char *path, char **labels, int k, float *truth)
             ++count;
         }
     }
-    if(count != 1) printf("%d, %s\n", count, path);
+    if(count != 1) printf("Too many or too few labels: %d, %s\n", count, path);
 }
 
 matrix load_labels_paths(char **paths, int n, char **labels, int k)
@@ -513,16 +511,18 @@ data load_data_detection_jitter_random(int n, char **paths, int m, int classes, 
 
         int flip = rand_r(&data_seed)%2;
         image cropped = crop_image(orig, pleft, ptop, swidth, sheight);
+
         float dx = ((float)pleft/ow)/sx;
         float dy = ((float)ptop /oh)/sy;
 
-        free_image(orig);
         image sized = resize_image(cropped, w, h);
-        free_image(cropped);
         if(flip) flip_image(sized);
         d.X.vals[i] = sized.data;
 
         fill_truth_detection(random_paths[i], d.y.vals[i], classes, num_boxes, flip, background, dx, dy, 1./sx, 1./sy);
+
+        free_image(orig);
+        free_image(cropped);
     }
     free(random_paths);
     return d;

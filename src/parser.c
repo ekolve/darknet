@@ -14,6 +14,7 @@
 #include "softmax_layer.h"
 #include "dropout_layer.h"
 #include "detection_layer.h"
+#include "avgpool_layer.h"
 #include "route_layer.h"
 #include "list.h"
 #include "option_list.h"
@@ -29,6 +30,7 @@ int is_convolutional(section *s);
 int is_deconvolutional(section *s);
 int is_connected(section *s);
 int is_maxpool(section *s);
+int is_avgpool(section *s);
 int is_dropout(section *s);
 int is_softmax(section *s);
 int is_normalization(section *s);
@@ -165,7 +167,7 @@ detection_layer parse_detection(list *options, size_params params)
     int rescore = option_find_int(options, "rescore", 0);
     int joint = option_find_int(options, "joint", 0);
     int objectness = option_find_int(options, "objectness", 0);
-    int background = option_find_int(options, "background", 0);
+    int background = 0;
     detection_layer layer = make_detection_layer(params.batch, params.inputs, classes, coords, joint, rescore, background, objectness);
     return layer;
 }
@@ -194,7 +196,10 @@ crop_layer parse_crop(list *options, size_params params)
     batch=params.batch;
     if(!(h && w && c)) error("Layer before crop layer must output image.");
 
+    int noadjust = option_find_int_quiet(options, "noadjust",0);
+
     crop_layer l = make_crop_layer(batch,h,w,c,crop_height,crop_width,flip, angle, saturation, exposure);
+    l.noadjust = noadjust;
     return l;
 }
 
@@ -214,10 +219,26 @@ maxpool_layer parse_maxpool(list *options, size_params params)
     return layer;
 }
 
+avgpool_layer parse_avgpool(list *options, size_params params)
+{
+    int batch,w,h,c;
+    w = params.w;
+    h = params.h;
+    c = params.c;
+    batch=params.batch;
+    if(!(h && w && c)) error("Layer before avgpool layer must output image.");
+
+    avgpool_layer layer = make_avgpool_layer(batch,w,h,c);
+    return layer;
+}
+
 dropout_layer parse_dropout(list *options, size_params params)
 {
     float probability = option_find_float(options, "probability", .5);
     dropout_layer layer = make_dropout_layer(params.batch, params.inputs, probability);
+    layer.out_w = params.w;
+    layer.out_h = params.h;
+    layer.out_c = params.c;
     return layer;
 }
 
@@ -277,7 +298,6 @@ void parse_net_options(list *options, network *net)
     net->learning_rate = option_find_float(options, "learning_rate", .001);
     net->momentum = option_find_float(options, "momentum", .9);
     net->decay = option_find_float(options, "decay", .0001);
-    net->seen = option_find_int(options, "seen",0);
     int subdivs = option_find_int(options, "subdivisions",1);
     net->batch /= subdivs;
     net->subdivisions = subdivs;
@@ -333,6 +353,8 @@ network parse_network_cfg(char *filename)
             l = parse_normalization(options, params);
         }else if(is_maxpool(s)){
             l = parse_maxpool(options, params);
+        }else if(is_avgpool(s)){
+            l = parse_avgpool(options, params);
         }else if(is_route(s)){
             l = parse_route(options, params, net);
         }else if(is_dropout(s)){
@@ -401,6 +423,11 @@ int is_maxpool(section *s)
 {
     return (strcmp(s->type, "[max]")==0
             || strcmp(s->type, "[maxpool]")==0);
+}
+int is_avgpool(section *s)
+{
+    return (strcmp(s->type, "[avg]")==0
+            || strcmp(s->type, "[avgpool]")==0);
 }
 int is_dropout(section *s)
 {
@@ -476,7 +503,7 @@ list *read_cfg(char *filename)
     return sections;
 }
 
-void save_weights(network net, char *filename)
+void save_weights_upto(network net, char *filename, int cutoff)
 {
     fprintf(stderr, "Saving weights to %s\n", filename);
     FILE *fp = fopen(filename, "w");
@@ -488,7 +515,7 @@ void save_weights(network net, char *filename)
     fwrite(&net.seen, sizeof(int), 1, fp);
 
     int i;
-    for(i = 0; i < net.n; ++i){
+    for(i = 0; i < net.n && i < cutoff; ++i){
         layer l = net.layers[i];
         if(l.type == CONVOLUTIONAL){
 #ifdef GPU
@@ -521,6 +548,10 @@ void save_weights(network net, char *filename)
         }
     }
     fclose(fp);
+}
+void save_weights(network net, char *filename)
+{
+    save_weights_upto(net, filename, net.n);
 }
 
 void load_weights_upto(network *net, char *filename, int cutoff)

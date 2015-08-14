@@ -14,7 +14,8 @@ typedef enum {
     CROP,
     ROUTE,
     COST,
-    NORMALIZATION
+    NORMALIZATION,
+    AVGPOOL
 } LAYER_TYPE;
 
 typedef enum{
@@ -48,6 +49,7 @@ typedef struct {
     int objectness;
     int does_cost;
     int joint;
+    int noadjust;
 
     float alpha;
     float beta;

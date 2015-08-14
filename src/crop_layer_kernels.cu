@@ -5,8 +5,6 @@ extern "C" {
 #include "image.h"
 }
 
-#define BLOCK 256
-
 __device__ float get_pixel_kernel(float *image, int w, int h, int x, int y, int c)
 {
     if(x < 0 || x >= w || y < 0 || y >= h) return 0;
@@ -78,7 +76,7 @@ __device__ float3 hsv_to_rgb_kernel(float3 hsv)
     return make_float3(r, g, b);
 }
 
-__device__ float billinear_interpolate_kernel(float *image, int w, int h, float x, float y, int c)
+__device__ float bilinear_interpolate_kernel(float *image, int w, int h, float x, float y, int c)
 {
     int ix = (int) floorf(x);
     int iy = (int) floorf(y);
@@ -170,7 +168,7 @@ __global__ void forward_crop_layer_kernel(float *input, float *rand, int size, i
     float rx = cos(angle)*(x-cx) - sin(angle)*(y-cy) + cx;
     float ry = sin(angle)*(x-cx) + cos(angle)*(y-cy) + cy;
 
-    output[count] = billinear_interpolate_kernel(input, w, h, rx, ry, k);
+    output[count] = bilinear_interpolate_kernel(input, w, h, rx, ry, k);
 }
 
 extern "C" void forward_crop_layer_gpu(crop_layer layer, network_state state)
@@ -181,6 +179,10 @@ extern "C" void forward_crop_layer_gpu(crop_layer layer, network_state state)
 
     float scale = 2;
     float translate = -1;
+    if(layer.noadjust){
+        scale = 1;
+        translate = 0;
+    }
 
     int size = layer.batch * layer.w * layer.h;
 

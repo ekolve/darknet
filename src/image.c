@@ -188,7 +188,7 @@ void show_image_cv(image p, char *name)
     int x,y,k;
     image copy = copy_image(p);
     constrain_image(copy);
-    rgbgr_image(copy);
+    if(p.c == 3) rgbgr_image(copy);
     //normalize_image(copy);
 
     char buff[256];
@@ -249,6 +249,7 @@ void save_image(image im, char *name)
         }
     }
     int success = stbi_write_png(buff, im.w, im.h, im.c, data, im.w*im.c);
+    free(data);
     if(!success) fprintf(stderr, "Failed to write image %s\n", buff);
 }
 
@@ -332,7 +333,7 @@ image rotate_image(image im, float rad)
             for(x = 0; x < im.w; ++x){
                 float rx = cos(rad)*(x-cx) - sin(rad)*(y-cy) + cx;
                 float ry = sin(rad)*(x-cx) + cos(rad)*(y-cy) + cy;
-                float val = billinear_interpolate(im, rx, ry, c);
+                float val = bilinear_interpolate(im, rx, ry, c);
                 set_pixel(rot, x, y, c, val);
             }
         }
@@ -549,7 +550,7 @@ void saturate_exposure_image(image im, float sat, float exposure)
    }
  */
 
-float billinear_interpolate(image im, float x, float y, int c)
+float bilinear_interpolate(image im, float x, float y, int c)
 {
     int ix = (int) floorf(x);
     int iy = (int) floorf(y);
@@ -564,23 +565,47 @@ float billinear_interpolate(image im, float x, float y, int c)
     return val;
 }
 
-// #wikipedia
 image resize_image(image im, int w, int h)
 {
     image resized = make_image(w, h, im.c);   
+    image part = make_image(w, im.h, im.c);
     int r, c, k;
     float w_scale = (float)(im.w - 1) / (w - 1);
     float h_scale = (float)(im.h - 1) / (h - 1);
     for(k = 0; k < im.c; ++k){
-        for(r = 0; r < h; ++r){
+        for(r = 0; r < im.h; ++r){
             for(c = 0; c < w; ++c){
-                float sx = c*w_scale;
-                float sy = r*h_scale;
-                float val = billinear_interpolate(im, sx, sy, k);
-                set_pixel(resized, c, r, k, val);
+                float val = 0;
+                if(c == w-1){
+                    val = get_pixel(im, im.w-1, r, k);
+                } else {
+                    float sx = c*w_scale;
+                    int ix = (int) sx;
+                    float dx = sx - ix;
+                    val = (1 - dx) * get_pixel(im, ix, r, k) + dx * get_pixel(im, ix+1, r, k);
+                }
+                set_pixel(part, c, r, k, val);
             }
         }
     }
+    for(k = 0; k < im.c; ++k){
+        for(r = 0; r < h; ++r){
+            float sy = r*h_scale;
+            int iy = (int) sy;
+            float dy = sy - iy;
+            for(c = 0; c < w; ++c){
+                float val = (1-dy) * get_pixel(part, c, iy, k);
+                set_pixel(resized, c, r, k, val);
+            }
+            if(r == h-1) continue;
+            for(c = 0; c < w; ++c){
+                float val = dy * get_pixel(part, c, iy+1, k);
+                add_pixel(resized, c, r, k, val);
+            }
+        }
+    }
+
+    free_image(part);
     return resized;
 }
 
@@ -728,6 +753,11 @@ void set_pixel(image m, int x, int y, int c, float val)
     assert(x < m.w && y < m.h && c < m.c);
     m.data[c*m.h*m.w + y*m.w + x] = val;
 }
+void add_pixel(image m, int x, int y, int c, float val)
+{
+    assert(x < m.w && y < m.h && c < m.c);
+    m.data[c*m.h*m.w + y*m.w + x] += val;
+}
 
 void print_image(image m)
 {
@@ -820,8 +850,16 @@ image collapse_images_horz(image *ims, int n)
 void show_images(image *ims, int n, char *window)
 {
     image m = collapse_images_vert(ims, n);
-    save_image(m, window);
-    show_image(m, window);
+    int w = 448;
+    int h = ((float)m.h/m.w) * 448;
+    if(h > 896){
+        h = 896;
+        w = ((float)m.w/m.h) * 896;
+    }
+    image sized = resize_image(m, w, h);
+    save_image(sized, window);
+    show_image(sized, window);
+    free_image(sized);
     free_image(m);
 }
 
