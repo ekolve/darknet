@@ -38,7 +38,7 @@ void train_tables(char *cfgfile, char *weightfile, char *dataFolder, char *label
         ++i;
         time=clock();
         data train = load_data_tables(paths, imgs, plist->size, 256, 256, dataFolder, labelsFolder);
-        printf("%d: Loaded partial training data = %d images\n", i, net.seen);
+        printf("%d: Loaded partial training data\n", i);
 
         float loss = train_network(net, train);
         printf("%d: Trained network\n");
@@ -58,7 +58,7 @@ void train_tables(char *cfgfile, char *weightfile, char *dataFolder, char *label
         free_data(train);
         if((i % 20000) == 0) net.learning_rate *= .1;
         //if(i%100 == 0 && net.learning_rate > .00001) net.learning_rate *= .97;
-        if(i%250==0){
+        if(i%1==0){
             char buff[256];
             sprintf(buff, "weights/%s_%d.weights", base, i);
             save_weights(net, buff);
