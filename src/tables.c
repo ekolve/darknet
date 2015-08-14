@@ -38,7 +38,11 @@ void train_tables(char *cfgfile, char *weightfile, char *dataFolder, char *label
         ++i;
         time=clock();
         data train = load_data_tables(paths, imgs, plist->size, 256, 256, dataFolder, labelsFolder);
+        printf("%d: Loaded partial training data = %d images\n", i, net.seen);
+
         float loss = train_network(net, train);
+        printf("%d: Trained network\n");
+
         #ifdef GPU
         float *out = get_network_output_gpu(net);
         #else
@@ -86,14 +90,14 @@ void test_tables(char *cfgfile, char *weightfile)
 
     // Write predicitons to output file
     int netOutputSize = get_network_output_size(net);
-    char *outFileName = find_replace(filename, ".png", "-output.csv");
+    char *outFileName = find_replace(filename, ".png", "-output.txt");
     printf("Writing predictions to the output file %s", outFileName);
     write_outputs_to_file(predictions, netOutputSize, outFileName);
 
     // Write last but 1 layer to output file
     float *lastButOneOutputs = get_network_output_lastButOne(net);
     int lboNetOutputSize = get_network_output_size_lastButOne(net);
-    char *lboFileName = find_replace(filename, ".png", "-lastButOne.csv");
+    char *lboFileName = find_replace(filename, ".png", "-lastButOne.txt");
     printf("Writing the last but one layer outputs to the output file %s", lboFileName);
     write_outputs_to_file(lastButOneOutputs, lboNetOutputSize, lboFileName);
 

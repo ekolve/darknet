@@ -605,7 +605,7 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     // k : Number of labels to regress to
 
     if(m) paths = get_random_paths(paths, n, m);
-    char **replace_paths_ext = find_replace_paths(paths, n, ".png", "-label.csv");
+    char **replace_paths_ext = find_replace_paths(paths, n, ".png", "_output.txt");
     char replacePathBuff1[256];
     sprintf(replacePathBuff1, "/%s/", dataFolder);
     char replacePathBuff2[256];
