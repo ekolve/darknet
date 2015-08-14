@@ -82,8 +82,8 @@ void fill_label_for_single_image(char *path, float *label)
 
 int get_num_labels(char *path)
 {
-    //printf("%s",path);
-    //fflush(stdout);
+    printf("%s",path);
+    fflush(stdout);
     FILE *file = fopen(path, "r");
     if(!file) file_error(path);
     int lineCounter=0;
@@ -97,7 +97,8 @@ int get_num_labels(char *path)
 
 matrix load_csv_paths(char **paths, int n)
 {
-    int numLabels = get_num_labels(paths[0]);
+    //int numLabels = get_num_labels(paths[0]);
+    int numLabels = 18;
     printf("\n%s,%s",n,numLabels);
     matrix y = make_matrix(n, numLabels);
     int i;
