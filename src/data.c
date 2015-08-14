@@ -107,7 +107,7 @@ matrix load_csv_paths(char **paths, int n)
     printf("Really out");
     fflush(stdout);
     //int numLabels = 18;
-    printf("\n%s,%s",n,numLabels);
+    printf("\n%d,%d",n,numLabels);
     fflush(stdout);
     matrix y = make_matrix(n, numLabels);
     int i;
