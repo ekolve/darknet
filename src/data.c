@@ -109,14 +109,17 @@ matrix load_csv_paths(char **paths, int n)
     //int numLabels = 18;
     printf("\n%d,%d",n,numLabels);
     fflush(stdout);
+
     matrix y = make_matrix(n, numLabels);
     /*
     int i;
     for(i = 0; i < n; i++){
         fill_label_for_single_image(paths[i], y.vals[i]);
-    }*/
+    }
+    */
     printf("Finished loading all csvs");
     fflush(stdout);
+    return y;
 }
 
 matrix load_image_paths_gray(char **paths, int n, int w, int h)
