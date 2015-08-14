@@ -605,21 +605,26 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     // k : Number of labels to regress to
 
     printf("1");
+    fflush(stdout);
     if(m) paths = get_random_paths(paths, n, m);
     char **replace_paths_ext = find_replace_paths(paths, n, ".png", "_output.txt");
     printf("2");
+    fflush(stdout);
     char replacePathBuff1[256];
     sprintf(replacePathBuff1, "/%s/", dataFolder);
     char replacePathBuff2[256];
     sprintf(replacePathBuff2, "/%s/", labelsFolder);
     char **replace_paths = find_replace_paths(replace_paths_ext, n, replacePathBuff1, replacePathBuff2);
     printf("3");
+    fflush(stdout);
     data d;
     d.shallow = 0;
     d.X = load_image_paths(paths, n, w, h);
     printf("4");
+    fflush(stdout);
     d.y = load_csv_paths(paths, n);
     printf("5");
+    fflush(stdout);
     if(m) free(paths);
     int i;
     for(i = 0; i < n; ++i) free(replace_paths[i]);
