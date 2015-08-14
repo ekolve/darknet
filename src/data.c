@@ -78,7 +78,7 @@ void fill_label_for_single_image(char *path, float *label)
     fclose(file);
 }
 
-int get_num_labels(char path)
+int get_num_labels(char *path)
 {
     printf("%s",path);
     fflush(stdout);
@@ -626,9 +626,9 @@ data load_data_tables(char **paths, int n, int m, int w, int h, char *dataFolder
     d.X = load_image_paths(paths, n, w, h);
     printf("4");
     fflush(stdout);
-    printf("%s",paths[0]);
+    printf("\n%s",paths[0]);
     fflush(stdout);
-    printf("%s",replace_paths[0]);
+    printf("\n%s",replace_paths[0]);
     fflush(stdout);
     d.y = load_csv_paths(replace_paths, n);
     printf("5");
