@@ -57,12 +57,22 @@ void train_tables(char *cfgfile, char *weightfile, char *dataFolder, char *label
         printf("%d: %f, %f avg, %lf seconds, %d images\n", i, loss, avg_loss, sec(clock()-time), net.seen);
         free_data(train);
         if((i % 20000) == 0) net.learning_rate *= .1;
+
+        printf(" Debug1 ");
+        fflush(stdout);
+        char buff[256];
+        sprintf(buff, "weights/%s_%d.weights", base, i);
+        printf(" %s ", buff);
+        fflush(stdout);
+        save_weights(net, buff);
+        printf(" Debug2 ");
+        fflush(stdout);
         //if(i%100 == 0 && net.learning_rate > .00001) net.learning_rate *= .97;
-        if(i%1==0){
+        /*if(i%1==0){
             char buff[256];
             sprintf(buff, "weights/%s_%d.weights", base, i);
             save_weights(net, buff);
-        }
+        }*/
     }
 }
 
