@@ -93,7 +93,11 @@ int get_num_labels(char *path)
         fflush(stdout);
         lineCounter++;
     }
+    printf(" Out ");
+    fflush(stdout);
     fclose(file);
+    printf(" Close ");
+    fflush(stdout);
     return lineCounter;
 }
 
@@ -102,6 +106,7 @@ matrix load_csv_paths(char **paths, int n)
     int numLabels = get_num_labels(paths[0]);
     //int numLabels = 18;
     printf("\n%s,%s",n,numLabels);
+    fflush(stdout);
     matrix y = make_matrix(n, numLabels);
     int i;
     for(i = 0; i < n; ++i){
